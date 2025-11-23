@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"connect_server",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"connect_server",
+  "parent":{
+    "name":"Integration",
+    "path":"folders/Integration.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

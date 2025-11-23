@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_welcome",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_welcome",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

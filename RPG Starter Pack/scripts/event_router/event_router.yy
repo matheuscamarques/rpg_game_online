@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"event_router",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"event_router",
+  "parent":{
+    "name":"Integration",
+    "path":"folders/Integration.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

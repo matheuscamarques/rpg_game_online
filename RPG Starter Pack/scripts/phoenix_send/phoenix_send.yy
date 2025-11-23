@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"phoenix_send",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"phoenix_send",
+  "parent":{
+    "name":"Integration",
+    "path":"folders/Integration.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

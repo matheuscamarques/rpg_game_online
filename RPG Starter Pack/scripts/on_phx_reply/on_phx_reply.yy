@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_phx_reply",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_phx_reply",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

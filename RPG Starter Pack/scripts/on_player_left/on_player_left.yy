@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_player_left",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_player_left",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

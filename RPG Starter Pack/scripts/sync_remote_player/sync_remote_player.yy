@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"sync_remote_player",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"sync_remote_player",
+  "parent":{
+    "name":"Integration",
+    "path":"folders/Integration.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
