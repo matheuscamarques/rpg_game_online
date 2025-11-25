@@ -14,10 +14,9 @@ defmodule RpgGameServerWeb.Endpoint do
 
   socket "/socket", RpgGameServerWeb.UserSocket,
     websocket: [
-     serializer: [{GameMakerSerializer, "~> 2.0.0"}],
-     connect_info: [:peer_data, :x_headers]
-
-     ],
+      serializer: [{GameMakerSerializer, "~> 2.0.0"}],
+      connect_info: [:peer_data, :x_headers]
+    ],
     longpoll: false,
     check_origin: false
 
@@ -60,5 +59,6 @@ defmodule RpgGameServerWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+  plug CORSPlug, origin: "*"
   plug RpgGameServerWeb.Router
 end

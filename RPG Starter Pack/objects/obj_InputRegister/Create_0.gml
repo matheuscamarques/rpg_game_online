@@ -27,3 +27,6 @@ btn_y = y + 300;
 btn_w = 95;             
 btn_h = 30;             
 espaco = 10;
+
+// Adicione esta variável para controlar a requisição HTTP
+request_register = -1;

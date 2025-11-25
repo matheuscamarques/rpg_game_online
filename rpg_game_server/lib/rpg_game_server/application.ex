@@ -2,6 +2,7 @@ defmodule RpgGameServer.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
+  alias RpgGameServer.SessionTokenCache
 
   use Application
 
@@ -9,14 +10,15 @@ defmodule RpgGameServer.Application do
   def start(_type, _args) do
     children = [
       RpgGameServerWeb.Telemetry,
-      # RpgGameServer.Repo,
+      RpgGameServer.Repo,
       {DNSCluster, query: Application.get_env(:rpg_game_server, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: RpgGameServer.PubSub},
       # Start a worker by calling: RpgGameServer.Worker.start_link(arg)
       # {RpgGameServer.Worker, arg},
       # Start to serve requests, typically the last entry
       RpgGameServerWeb.Endpoint,
-      RpgGameServerWeb.Presence
+      RpgGameServerWeb.Presence,
+      {SessionTokenCache, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

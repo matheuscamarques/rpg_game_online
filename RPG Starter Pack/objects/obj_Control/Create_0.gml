@@ -16,3 +16,7 @@ global.personagens = [];
 
 // Personagem atual selecionado para jogar
 global.char_ativo = -1;
+
+global.api_url = "http://localhost:4000/api"; // Ajuste se for diferente
+global.api_token = ""; // Onde guardaremos o token "Bearer ..."
+global.personagens = []; 

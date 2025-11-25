@@ -48,27 +48,39 @@ if (point_in_rectangle(mouse_x, mouse_y, x1_voltar, btn_y, x2_voltar, y2_btn) &&
 // BOTÃO REGISTRAR
 if (point_in_rectangle(mouse_x, mouse_y, x1_reg, btn_y, x2_reg, y2_btn) && mouse_click) {
     
-    // VALIDAÇÕES
+    // 1. Validação Local Básica
     if (email_texto == "" || user_texto == "" || senha_texto == "") {
-        msg_erro = "Please complete all the inputs!";
+        msg_erro = "Preencha todos os campos!";
         shake_timer = 10;
     } 
     else if (senha_texto != check_texto) {
-        msg_erro = "Password is not equals";
-        check_texto = ""; // Limpa a confirmação
-        keyboard_string = "";
-        campo_ativo = 3;
+        msg_erro = "As senhas não coincidem!";
         shake_timer = 10;
     } 
     else {
-        // SUCESSO! Salva nas Globais
-        global.db_email = email_texto;
-        global.db_user = user_texto;
-        global.db_pass = senha_texto;
+        // 2. PREPARAR O JSON PARA O PHOENIX
+        // O backend espera: %{"username" => ..., "email" => ..., "password" => ...}
+        var _body = {
+            username: user_texto,
+            email: email_texto,
+            password: senha_texto
+        };
         
-        // Manda de volta pro login para a pessoa entrar
-        room_goto(rm_login);
-    }
+        var _json_str = json_stringify(_body);
+        
+        // 3. CONFIGURAR HEADER (Não precisa de Token aqui, é rota pública)
+        var _header = ds_map_create();
+        ds_map_add(_header, "Content-Type", "application/json");
+        
+        // 4. DISPARAR REQUISIÇÃO
+        // URL: http://localhost:4000/api/register
+        request_register = http_request(global.api_url + "/register", "POST", _header, _json_str);
+        
+        ds_map_destroy(_header);
+        
+        // Feedback imediato enquanto espera
+        msg_erro = "Enviando dados...";
+	}
 }
 
 // --- SHAKE ---

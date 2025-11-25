@@ -40,3 +40,5 @@ btn_y = y + 120;        // Posição Y (abaixo das caixas de texto)
 btn_w = 95;             // Largura de cada botão
 btn_h = 30;             // Altura do botão
 espaco = 10;            // Espaço entre o botão Login e Register
+
+request_login = -1; // Vai guardar o ID da requisição HTTP

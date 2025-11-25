@@ -1,12 +1,14 @@
-/// @function net_on_player_left(payload)
+/// @function on_player_left(payload)
 function on_player_left(_payload) {
-    var _p_id = string(_payload.id);
+    var _id_sair = string(_payload.id);
+    var _map = obj_Network.remote_players_map;
     
-    // Acessa o mapa dentro do obj_Network
-    if (ds_map_exists(obj_Network.remote_players_map, _p_id)) {
-        var _inst = obj_Network.remote_players_map[? _p_id];
-        if (instance_exists(_inst)) instance_destroy(_inst);
-        ds_map_delete(obj_Network.remote_players_map, _p_id);
-        show_debug_message(">>> [SAIU] ID: " + _p_id);
+    if (ds_map_exists(_map, _id_sair)) {
+        var _inst = _map[? _id_sair];
+        if (instance_exists(_inst)) {
+            instance_destroy(_inst); // Destroi o boneco da tela
+        }
+        ds_map_delete(_map, _id_sair); // Remove da memória
+        show_debug_message(">>> [SAIU] Jogador removido: " + _id_sair);
     }
 }

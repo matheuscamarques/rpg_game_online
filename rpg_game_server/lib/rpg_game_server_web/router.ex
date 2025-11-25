@@ -1,6 +1,7 @@
 defmodule RpgGameServerWeb.Router do
   use RpgGameServerWeb, :router
 
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -14,10 +15,38 @@ defmodule RpgGameServerWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :auth do
+    plug RpgGameServerWeb.AuthPlug
+  end
+
   scope "/", RpgGameServerWeb do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  # =================================================================
+  # 1. ROTAS PÚBLICAS (Sem Token)
+  # =================================================================
+  scope "/api", RpgGameServerWeb do
+    pipe_through :api
+
+    post "/login", AuthController, :login
+    post "/register", AuthController, :register
+  end
+
+  # =================================================================
+  # 2. ROTAS PROTEGIDAS (Com Token)
+  # =================================================================
+  scope "/api", RpgGameServerWeb do
+    # O segredo está aqui: passa pelo :api E DEPOIS pelo :auth
+    pipe_through [:api, :auth]
+
+    # Note que removi o :user_id da rota de index.
+    # Como você já tem o token, o controller sabe quem é o usuário!
+    get "/characters", CharacterController, :index
+    post "/characters", CharacterController, :create
+    delete "/characters/:id", CharacterController, :delete
   end
 
   # Other scopes may use custom stacks.
