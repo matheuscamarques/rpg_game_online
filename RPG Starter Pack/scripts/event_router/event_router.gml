@@ -10,7 +10,8 @@ function event_router(_event_type) {
         "current_players": on_current_players,
         "player_moved":    on_player_moved,
         "player_left":     on_player_left,
-        "phx_reply":       on_phx_reply
+        "phx_reply":       on_phx_reply,
+		"new_msg":		   on_chat_message
     };
 
     // Retorna a função associada OU undefined se não existir

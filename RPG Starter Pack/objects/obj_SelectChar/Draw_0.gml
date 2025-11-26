@@ -27,11 +27,11 @@ for (var i = 0; i < qtd_itens; i++) {
         var _char = global.personagens[i];
         
         draw_set_halign(fa_left); 
-        draw_text(lista_x + 20, _y + 10, _char.nome);
+        draw_text(lista_x + 20, _y + 10, _char.name);
         draw_text_transformed(lista_x + 20, _y + 40, _char.classe, 0.8, 0.8, 0);
         
         draw_set_halign(fa_right); 
-        draw_text(room_width - 20, _y + 10, "Lv." + string(_char.nivel));
+        draw_text(room_width - 20, _y + 10, "Lv." + string(_char.level));
         
         // Desenha o Sprite (Agora é um Asset válido graças ao Async)
         if (sprite_exists(_char.sprite)) {

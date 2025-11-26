@@ -1,3 +1,5 @@
+// ALARM 0
+
 show_debug_message(">>> [PHOENIX] Enviando Join com Personagem...");
 
 // Dados iniciais do jogador Local

@@ -13,7 +13,7 @@ defmodule RpgGameServerWeb.CharacterController do
 
     json_list =
       Enum.map(characters, fn c ->
-        %{id: c.id, nome: c.name, classe: c.class, nivel: c.level, sprite: c.sprite_idx}
+        %{id: c.id, name: c.name, classe: c.class, level: c.level, sprite: c.sprite_idx}
       end)
 
     json(conn, %{status: "success", personagens: json_list})

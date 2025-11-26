@@ -36,6 +36,7 @@
   "resources":[
     {"id":{"name":"font_pt","path":"fonts/font_pt/font_pt.yy",},},
     {"id":{"name":"ReadMe","path":"notes/ReadMe/ReadMe.yy",},},
+    {"id":{"name":"obj_Chat","path":"objects/obj_Chat/obj_Chat.yy",},},
     {"id":{"name":"obj_Control","path":"objects/obj_Control/obj_Control.yy",},},
     {"id":{"name":"obj_InputLogin","path":"objects/obj_InputLogin/obj_InputLogin.yy",},},
     {"id":{"name":"obj_InputRegister","path":"objects/obj_InputRegister/obj_InputRegister.yy",},},
@@ -49,6 +50,7 @@
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
     {"id":{"name":"connect_server","path":"scripts/connect_server/connect_server.yy",},},
     {"id":{"name":"event_router","path":"scripts/event_router/event_router.yy",},},
+    {"id":{"name":"on_chat_message","path":"scripts/on_chat_message/on_chat_message.yy",},},
     {"id":{"name":"on_current_players","path":"scripts/on_current_players/on_current_players.yy",},},
     {"id":{"name":"on_phx_reply","path":"scripts/on_phx_reply/on_phx_reply.yy",},},
     {"id":{"name":"on_player_left","path":"scripts/on_player_left/on_player_left.yy",},},

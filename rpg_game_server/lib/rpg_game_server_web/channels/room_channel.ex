@@ -17,8 +17,16 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     y = Map.get(payload, "y", 200)
     spr = Map.get(payload, "spr", 0)
 
-    # Se o GM não mandar o char, garantimos um mapa vazio para não quebrar
+    # Recupera o objeto char e o nome
     char = Map.get(payload, "char", %{})
+
+    # --- NOVO: Extrai o nome e salva no Socket ---
+    # Como você confirmou que "name" existe, pegamos direto.
+    # Usamos Map.get para garantir que não quebre caso venha nil por algum bug.
+    char_name = Map.get(char, "name", "Player #{user_id}")
+
+    # Atualizamos o socket com o nome para usar no chat depois
+    socket = assign(socket, :char_name, char_name)
 
     # 1. Rastreia no Presence
     {:ok, _} =
@@ -26,24 +34,38 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
         x: x,
         y: y,
         spr: spr,
-        char: char, # Salvamos o objeto completo aqui!
+        char: char,
         online_at: System.system_time(:second)
       })
-
-    # 2. Manda lista para quem entrou (COM OS DADOS DE CHAR)
+    push(socket, "welcome", %{my_id: user_id})
+    # 2. Manda lista para quem entrou
     push(socket, "current_players", %{players: list_present_players(socket)})
 
     # 3. Welcome
-    push(socket, "welcome", %{my_id: user_id})
 
-    # 4. Broadcast de entrada (COM OS DADOS DE CHAR)
-    # Se não mandar o char aqui, os outros jogadores não saberão seu nome/classe
+    # 4. Broadcast de entrada
     broadcast_from!(socket, "player_moved", %{
       id: user_id,
       x: x,
       y: y,
       spr: spr,
       char: char
+    })
+
+    # IMPORTANTE: Retornar o socket atualizado (com o assign do nome)
+    {:noreply, socket}
+  end
+
+  # --- NOVO: Handler de Chat ---
+  # Recebe "text" do GameMaker e devolve para todos com o nome do sender
+  @impl true
+  def handle_in("new_msg", %{"text" => text}, socket) do
+    sender_name = socket.assigns.char_name
+    Logger.debug("Receive message from #{sender_name}: #{text}")
+    broadcast!(socket, "new_msg", %{
+      text: text,
+      sender: sender_name,
+      type: "global"
     })
 
     {:noreply, socket}
@@ -54,19 +76,16 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     user_id = socket.assigns.current_user_id
     spr = Map.get(payload, "spr", 0)
 
-    # Atualiza Presence (Não precisa atualizar 'char' toda hora, ele não muda andando)
     Presence.update(socket, user_id, fn meta ->
       Map.merge(meta, %{x: x, y: y, spr: spr})
     end)
 
-    # Broadcast de movimento
     final_payload = Map.put(payload, "id", user_id)
     broadcast_from!(socket, "player_moved", final_payload)
 
     {:noreply, socket}
   end
 
-  # Faltava o terminate para limpar o boneco no GameMaker quando fecha o jogo
   @impl true
   def terminate(_reason, socket) do
     user_id = socket.assigns.current_user_id
@@ -74,13 +93,11 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     :ok
   end
 
-  # Função auxiliar corrigida para incluir o CHAR
   defp list_present_players(socket) do
     Presence.list(socket)
     |> Enum.map(fn {id, data} ->
       meta = List.first(data.metas)
 
-      # Retorna tudo, incluindo o objeto char que salvamos no track
       %{
         id: id,
         x: meta.x,
