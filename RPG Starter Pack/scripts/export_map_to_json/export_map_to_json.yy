@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"export_map_to_json",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"export_map_to_json",
+  "parent":{
+    "name":"Integration",
+    "path":"folders/Integration.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

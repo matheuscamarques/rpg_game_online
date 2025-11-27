@@ -1,5 +1,6 @@
-/// @function sync_remote_player(id, x, y, spr, char_data)
-function sync_remote_player(_p_id, _p_x, _p_y, _p_spr, _char_data) { // <--- Novo argumento
+/// @function sync_remote_player(id, x, y, spr, char_data, state)
+// Adicionado _p_state com valor padrão 0 (FREE) para evitar erros se for omitido
+function sync_remote_player(_p_id, _p_x, _p_y, _p_spr, _char_data, _p_state = 0, _p_face = 0) { 
     
     var _str_id = string(_p_id);
     if (!instance_exists(obj_Network)) return;
@@ -16,6 +17,11 @@ function sync_remote_player(_p_id, _p_x, _p_y, _p_spr, _char_data) { // <--- Nov
             _inst.target_x = _p_x;
             _inst.target_y = _p_y;
             if (!is_undefined(_p_spr)) _inst.sprite_index = real(_p_spr);
+            
+            // --- ATUALIZAÇÃO DO ESTADO ---
+            // Atualiza o estado visual (0=Normal, 1=Atacando)
+            _inst.remote_state = _p_state;
+			_inst.facing_direction = _p_face;
         }
     } 
     // --- CENÁRIO B: NOVO ---
@@ -25,14 +31,15 @@ function sync_remote_player(_p_id, _p_x, _p_y, _p_spr, _char_data) { // <--- Nov
         _inst.target_x = _p_x;
         _inst.target_y = _p_y;
         if (!is_undefined(_p_spr)) _inst.sprite_index = real(_p_spr);
+        
+        // --- INICIALIZAÇÃO DO ESTADO ---
+        _inst.remote_state = _p_state;
+		_inst.facing_direction = _p_face;
         ds_map_add(_map, _str_id, _inst);
     }
 
     // --- ATUALIZA DADOS DO PERSONAGEM (Nome, Classe, etc) ---
-    // Verifica se _char_data não é undefined e se a instância existe
     if (!is_undefined(_char_data) && instance_exists(_inst)) {
-        // Salva os dados dentro do boneco remoto para desenhar depois
-        // Ex: No Draw do obj_RemotePlayer você usa: draw_text(x, y-20, char_data.name)
         _inst.char_info = _char_data; 
     }
 }

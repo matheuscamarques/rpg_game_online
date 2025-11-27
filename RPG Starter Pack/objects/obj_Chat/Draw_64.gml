@@ -1,6 +1,14 @@
 draw_set_font(font_pt);
+var _gui_w = display_get_gui_width();
+var _gui_h = display_get_gui_height();
 
-// ---------------- DESENHAR ABAS ----------------
+// 3% de margem horizontal e vertical
+var _margin_x = floor(_gui_w * 0.03); 
+var _margin_y = floor(_gui_h * 0.03); 
+
+gui_x = _margin_x;
+gui_y = _gui_h - chat_height - _margin_y;
+
 var _tabs_y = gui_y - tab_height;
 
 for (var i = 0; i < array_length(tabs); i++) {

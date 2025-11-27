@@ -11,7 +11,10 @@ function event_router(_event_type) {
         "player_moved":    on_player_moved,
         "player_left":     on_player_left,
         "phx_reply":       on_phx_reply,
-		"new_msg":		   on_chat_message
+		"new_msg":		   on_chat_message,
+		"damage_applied":  on_damage_applied,
+		"enemy_update":    on_enemy_update,
+		"enemy_died": on_enemy_died
     };
 
     // Retorna a função associada OU undefined se não existir

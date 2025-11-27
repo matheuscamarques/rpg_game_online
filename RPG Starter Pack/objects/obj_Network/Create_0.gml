@@ -15,6 +15,6 @@ socket      = -1;
 ref_count   = 0;
 my_id       = "";
 remote_players_map = ds_map_create();
-
+enemies_map = ds_map_create();
 
 connect_server();

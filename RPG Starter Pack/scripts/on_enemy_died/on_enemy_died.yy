@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_enemy_died",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_enemy_died",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
