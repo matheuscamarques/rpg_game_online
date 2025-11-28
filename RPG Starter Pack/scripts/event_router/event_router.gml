@@ -14,9 +14,13 @@ function event_router(_event_type) {
 		"new_msg":		   on_chat_message,
 		"damage_applied":  on_damage_applied,
 		"enemy_update":    on_enemy_update,
-		"enemy_died": on_enemy_died
+		"enemy_died": on_enemy_died,
+		"xp_gain": on_xp_gain,
+		"world_update" : on_world_update
     };
-
+	
+	if (instance_exists(obj_Chat))
+		obj_Chat.add_message("Receive this event type from server: " + _event_type, c_yellow, CHAT_CHANNEL.SERVER);
     // Retorna a função associada OU undefined se não existir
     return _event_map[$ _event_type];
 }

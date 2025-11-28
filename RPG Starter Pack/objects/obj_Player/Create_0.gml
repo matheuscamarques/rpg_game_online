@@ -1,4 +1,5 @@
 /// CONFIGURAÇÃO GERAL
+network_id = -1;
 move_speed = 3.2;
 accel      = 0.2;
 friction   = 0.25;

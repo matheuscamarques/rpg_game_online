@@ -5,13 +5,14 @@ defmodule RpgGameServer.Game.EnemySpawner do
   alias RpgGameServer.Game.EnemySupervisor
   require Logger
 
-  @respawn_time 5000 # Aumentei para 5s para dar tempo de ver o bicho morto
+  @respawn_time 10000 # Aumentei para 10s para dar tempo de ver o bicho morto
 
   # Configuração do Level
   @mobs_config [
-    %{zone: "1", type: "human", count: 5},
+    %{zone: "1", type: "human", count: 1000000},
   ]
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -19,7 +20,9 @@ defmodule RpgGameServer.Game.EnemySpawner do
   @impl true
   def init(_) do
     # Espera 2 segundos pro MapServer carregar antes de spawnar
-    Process.send_after(self(), :spawn_wave, 2000)
+    RpgGameServer.Game.SpatialGrid.init()
+    RpgGameServer.Game.PlayerSpatialGrid.init()
+    Process.send_after(self(), :spawn_wave, 10000)
     {:ok, nil}
   end
 

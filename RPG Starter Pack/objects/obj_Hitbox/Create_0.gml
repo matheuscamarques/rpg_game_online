@@ -7,3 +7,5 @@ knockback = 5;
 hit_list = ds_list_create();
 
 is_authoritative = false;
+hit_network_ids = ds_list_create();
+show_debug_message(">>> NOVA HITBOX CRIADA: " + string(id));

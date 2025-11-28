@@ -65,6 +65,8 @@
     {"id":{"name":"on_player_left","path":"scripts/on_player_left/on_player_left.yy",},},
     {"id":{"name":"on_player_moved","path":"scripts/on_player_moved/on_player_moved.yy",},},
     {"id":{"name":"on_welcome","path":"scripts/on_welcome/on_welcome.yy",},},
+    {"id":{"name":"on_world_update","path":"scripts/on_world_update/on_world_update.yy",},},
+    {"id":{"name":"on_xp_gain","path":"scripts/on_xp_gain/on_xp_gain.yy",},},
     {"id":{"name":"phoenix_send","path":"scripts/phoenix_send/phoenix_send.yy",},},
     {"id":{"name":"sync_remote_player","path":"scripts/sync_remote_player/sync_remote_player.yy",},},
     {"id":{"name":"player_collision_mask","path":"sprites/player_collision_mask/player_collision_mask.yy",},},

@@ -18,3 +18,8 @@ remote_players_map = ds_map_create();
 enemies_map = ds_map_create();
 
 connect_server();
+
+garbage_collect_interval = 60; 
+
+// Inicia o alarme para disparar daqui a 1 segundo
+alarm[4] = garbage_collect_interval;

@@ -19,12 +19,14 @@ defmodule RpgGameServer.Application do
       RpgGameServerWeb.Endpoint,
       RpgGameServerWeb.Presence,
       {SessionTokenCache, []},
+      {PartitionSupervisor,
+       child_spec: RpgGameServer.Game.WorldTickerWorker, name: RpgGameServer.WorldTickerPartition},
       # 1. Inicia o MapServer (Precisa ser antes do Spawner)
       RpgGameServer.Game.Room1,
-
       {Registry, keys: :unique, name: RpgGameServer.EnemyRegistry},
       # 2. Inicia o Supervisor Dinâmico (Para os Mobs viverem dentro)
-      RpgGameServer.Game.EnemySupervisor,
+      {PartitionSupervisor,
+       child_spec: DynamicSupervisor, name: RpgGameServer.Game.EnemySupervisor},
 
       # 3. Inicia o Spawner (Que vai usar os dois acima)
       RpgGameServer.Game.EnemySpawner

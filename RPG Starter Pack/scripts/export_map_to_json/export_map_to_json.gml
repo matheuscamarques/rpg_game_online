@@ -71,14 +71,9 @@ function export_map_to_json() {
     show_debug_message("");
     show_debug_message("▼▼▼▼ COPIE A PARTIR DAQUI ▼▼▼▼");
     
-    var _len = string_length(_string_data);
-    var _chunk_size = 3000; // Tamanho seguro por linha
+
+    // show_debug_message(_string_data);
     
-    for (var i = 1; i <= _len; i += _chunk_size) {
-        // string_copy no GM é 1-based
-        var _chunk = string_copy(_string_data, i, _chunk_size);
-        show_debug_message(_chunk);
-    }
     
     show_debug_message("▲▲▲▲ ATÉ AQUI ▲▲▲▲");
     show_debug_message("");

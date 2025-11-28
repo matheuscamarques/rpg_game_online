@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_xp_gain",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_xp_gain",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

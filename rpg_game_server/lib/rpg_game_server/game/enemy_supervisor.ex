@@ -1,18 +1,21 @@
 defmodule RpgGameServer.Game.EnemySupervisor do
-  use DynamicSupervisor
+  # Não precisamos de "use DynamicSupervisor" aqui, pois o PartitionSupervisor
+  # lá no application.ex já iniciou os processos reais do DynamicSupervisor.
 
-  def start_link(_arg) do
-    DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
-  end
-
-  @impl true
-  def init(_arg) do
-    DynamicSupervisor.init(strategy: :one_for_one)
-  end
-
-  # Função auxiliar para criar um mob dinamicamente
+  # Função auxiliar para criar um mob
   def start_enemy(args) do
-    spec = {RpgGameServer.Game.EnemyAI, args}
-    DynamicSupervisor.start_child(__MODULE__, spec)
+    # 1. Definir a especificação do filho (quem vai nascer)
+    child_spec = {RpgGameServer.Game.EnemyAI, args}
+
+    # 2. Definir o Roteamento (Routing Key)
+    # A tupla {:via, PartitionSupervisor, {NOME, CHAVE}} diz ao Elixir:
+    # "Escolha uma partição baseada nesta CHAVE".
+
+    # Usamos args.id (ex: "human_1_500") como chave.
+    # Isso garante distribuição uniforme e determinística.Pspa
+    via_tuple = {:via, PartitionSupervisor, {__MODULE__, args.id}}
+
+    # 3. Iniciar
+    DynamicSupervisor.start_child(via_tuple, child_spec)
   end
 end

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_world_update",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_world_update",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
