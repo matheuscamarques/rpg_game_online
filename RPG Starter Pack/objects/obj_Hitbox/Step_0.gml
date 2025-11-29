@@ -14,7 +14,7 @@ if (is_authoritative == false) {
 
 // 2. Colisão
 var _list_now = ds_list_create();
-var _hits = instance_place_list(x, y, par_Damageable, _list_now, false);
+var _hits = instance_place_list(x, y, obj_EnemyParent, _list_now, false);
 
 if (_hits > 0) {
     // Debug: Viu colisão física

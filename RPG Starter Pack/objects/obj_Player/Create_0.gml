@@ -1,3 +1,4 @@
+event_inherited();
 /// CONFIGURAÇÃO GERAL
 network_id = -1;
 move_speed = 3.2;
@@ -21,6 +22,10 @@ last_sprite = sprite_index;
 network_timer = 0;
 xprevious = x;
 yprevious = y;
+
+
+equip_head = "basic_helmet";
+
 
 // --- STATE MACHINE ---
 enum STATES {
@@ -149,7 +154,7 @@ state_attack = method(self, function() {
 
 
 
-export_map_to_json();
+//export_map_to_json();
 
 
 

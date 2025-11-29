@@ -16,7 +16,8 @@ function event_router(_event_type) {
 		"enemy_update":    on_enemy_update,
 		"enemy_died": on_enemy_died,
 		"xp_gain": on_xp_gain,
-		"world_update" : on_world_update
+		"world_update" : on_world_update,
+		"damage_missed": on_damage_missed
     };
 	
 	if (instance_exists(obj_Chat))

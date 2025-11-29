@@ -1,7 +1,6 @@
 defmodule RpgGameServerWeb.Router do
   use RpgGameServerWeb, :router
 
-
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session

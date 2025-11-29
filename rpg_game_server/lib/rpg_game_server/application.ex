@@ -19,6 +19,7 @@ defmodule RpgGameServer.Application do
       RpgGameServerWeb.Endpoint,
       RpgGameServerWeb.Presence,
       {SessionTokenCache, []},
+      RpgGameServer.Game.ShardManager,
       {PartitionSupervisor,
        child_spec: RpgGameServer.Game.WorldTickerWorker, name: RpgGameServer.WorldTickerPartition},
       # 1. Inicia o MapServer (Precisa ser antes do Spawner)

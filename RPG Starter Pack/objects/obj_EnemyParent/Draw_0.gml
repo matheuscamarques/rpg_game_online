@@ -1,3 +1,4 @@
+event_inherited();
 draw_self();
 
 // Debug: Mostrar ID acima da cabeça

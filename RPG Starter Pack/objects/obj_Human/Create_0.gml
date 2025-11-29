@@ -1,5 +1,6 @@
 event_inherited(); // Herda variáveis do obj_EnemyParent (interpolação, etc)
 
+equip_head = "basic_helmet"
 // --- CONFIGURAÇÃO DE SPRITES ---
 // Mapeamos os sprites disponíveis
 spr_idle_d = spr_player_idle_down;

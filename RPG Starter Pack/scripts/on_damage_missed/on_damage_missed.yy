@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"on_damage_missed",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"on_damage_missed",
+  "parent":{
+    "name":"EventsHandlers",
+    "path":"folders/Integration/EventsHandlers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

@@ -7,7 +7,9 @@ defmodule RpgGameServerWeb.UserSocket do
   @impl true
   def connect(%{"token" => token}, socket, _connect_info) do
     case SessionTokenCache.get(token) do
-      nil -> :error
+      nil ->
+        :error
+
       user ->
         IO.puts(">>> [SOCKET] Usuário #{user.username} (ID: #{user.id}) conectado.")
         socket = assign(socket, :current_user_id, user.id)

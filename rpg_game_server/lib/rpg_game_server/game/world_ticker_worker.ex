@@ -5,7 +5,7 @@ defmodule RpgGameServer.Game.WorldTickerWorker do
 
   @broadcast_rate 50
 
-  @cell_size 600
+  @cell_size 700
 
   # 2. CONFIGURAÇÃO DE CHUNK: Máximo de entidades por pacote JSON
   @max_chunk_size 150

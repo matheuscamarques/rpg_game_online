@@ -1,14 +1,22 @@
-// Posição alvo (onde o servidor disse que ele está)
+event_inherited();
+// --- MOVIMENTO E INTERPOLAÇÃO ---
 target_x = x;
 target_y = y;
+smoothing = 0.1; // <--- FALTAVA ISSO (Define a suavidade do lerp, 10%)
 
-// Identidade
+// --- IDENTIDADE ---
 network_id = "";
-char_info = pointer_null;
-remote_state = 0;
+char_info = pointer_null; // Começa vazio (o Draw Event deve tratar isso com is_struct)
 
-// --- NOVO: Controle da Hitbox Remota ---
-my_hitbox = noone; // Guarda o ID da hitbox criada
-facing_direction = 270; // Começa olhando para baixo (ou 0)
+// --- VISUAL ---
+image_speed = 1; // <--- FALTAVA ISSO (Para a animação rodar)
+depth = -y;      // (Opcional, mas bom inicializar)
+
+// --- COMBATE (VISUAL) ---
+remote_state = 0;       // 0=Livre, 1=Atacando
+my_hitbox = noone;      // Guarda o ID da hitbox visual
+facing_direction = 270; // Direção padrão (Baixo)
+
+// --- TIMERS ---
 attack_timer = 0;
-attack_timer_max = 20;
+attack_timer_max = 20;  // Duração da animação de ataque

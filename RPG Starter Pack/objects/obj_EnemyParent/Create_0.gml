@@ -1,3 +1,4 @@
+event_inherited();
 // Identidade
 network_id = "";
 target_x = x;

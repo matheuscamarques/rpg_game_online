@@ -69,7 +69,7 @@ defmodule RpgGameServer.MixProject do
       {:bcrypt_elixir, "~> 3.3.2"},
       {:nebulex, "~> 2.6"},
       {:decorator, "~> 1.4"},
-      {:cors_plug, "~> 3.0"},
+      {:cors_plug, "~> 3.0"}
     ]
   end
 

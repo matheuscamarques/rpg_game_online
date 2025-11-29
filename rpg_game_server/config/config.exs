@@ -11,8 +11,7 @@ config :rpg_game_server,
   ecto_repos: [RpgGameServer.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-config :rpg_game_server, RpgGameServer.SessionTokenCache,
-  adapter: Nebulex.Adapters.Local
+config :rpg_game_server, RpgGameServer.SessionTokenCache, adapter: Nebulex.Adapters.Local
 # Configures the endpoint
 config :rpg_game_server, RpgGameServerWeb.Endpoint,
   url: [host: "localhost"],

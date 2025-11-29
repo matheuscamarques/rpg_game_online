@@ -16,8 +16,8 @@
     "path":"folders/Objects.yy",
   },
   "parentObjectId":{
-    "name":"par_Damageable",
-    "path":"objects/par_Damageable/par_Damageable.yy",
+    "name":"obj_EnemyParent",
+    "path":"objects/obj_EnemyParent/obj_EnemyParent.yy",
   },
   "persistent":false,
   "physicsAngularDamping":0.1,

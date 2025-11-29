@@ -1,25 +1,30 @@
+// --- LÓGICA VISUAL (Cor) ---
+// Se quiser reativar efeitos visuais de estado no futuro, coloque aqui.
+// Por enquanto, deixamos o sprite normal pois o obj_Hitbox fará o visual do ataque.
 if (remote_state == 1) {
-    // Se o servidor diz que ele está atacando
     // image_blend = c_red; 
 } else {
-    // Estado normal
-    //image_blend = c_white;
+    // image_blend = c_white;
 }
 
-draw_self(); // Desenha o boneco (agora com a cor certa)
-
+draw_self(); // Desenha o boneco
+draw_equipment();
 // --- Configuração do Texto ---
-draw_set_color(c_white);    // Define a cor branca
-draw_set_halign(fa_center); // (Opcional) Centraliza o texto horizontalmente em relação ao X
-draw_set_valign(fa_bottom); // (Opcional) Faz o texto crescer para cima a partir do ponto Y
+draw_set_color(c_white);    
+draw_set_halign(fa_center); 
+draw_set_valign(fa_bottom); 
 
-// Desenha o nome
-// Nota: Se usar fa_bottom, o y-20 fará o texto ficar 20px acima do ponto de origem
-if(variable_struct_exists(char_info,"name")){	
-draw_text_transformed(x, y - 10, char_info.name, 0.3, 0.3, 0);
+// --- CORREÇÃO CRÍTICA PARA HTML5 ---
+// 1. Verifica se é uma struct válida antes de tentar ler
+if (is_struct(char_info)) {
+    
+    // 2. Só então verifica a variável dentro
+    if (variable_struct_exists(char_info, "name")) {
+        draw_text_transformed(x, y - 10, char_info.name, 0.3, 0.3, 0);
+    }
 }
-// --- Reset das configurações (Boa Prática) ---
-// É importante resetar o alinhamento para não quebrar outros desenhos no jogo
+
+// --- Reset das configurações ---
 draw_set_halign(fa_left);
 draw_set_valign(fa_top);
 
