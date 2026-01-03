@@ -1,30 +1,23 @@
 defmodule RpgGameServerWeb.Channels.RoomChannel do
   use RpgGameServerWeb, :channel
+  alias RpgGameServer.Game.Factory
   alias RpgGameServerWeb.Presence
-  alias RpgGameServer.Game.{PlayerSpatialGrid, StatsCalculator}
+  # <--- Adicionado ActorContext
+  alias RpgGameServer.Game.{PlayerSpatialGrid, ActorContext}
   require Logger
 
   # Configuração AOI
-  @cell_size 700
+  @cell_size 2100
 
-  # Estado padrão
-  @default_state %{
+  # Estado padrão para coordenadas e visual (Stats agora ficam no Actor)
+  @default_visuals %{
     x: 200,
     y: 200,
     spr: 0,
     state: 0,
     face: 270,
     char: %{},
-    xp: 0,
-    stats: %{
-      vigor: 500,
-      endurance: 500,
-      attunement: 500,
-      strength: 500,
-      dexterity: 500,
-      intelligence: 500,
-      faith: 500
-    }
+    xp: 0
   }
 
   @impl true
@@ -37,123 +30,125 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
   def handle_info({:after_join, payload}, socket) do
     user_id = socket.assigns.current_user_id
 
-    # 1. Parse inicial
-    player_state = parse_player_state(payload)
-    char_data = get_in(player_state, [:char]) || %{}
+    # 1. Parse de dados básicos (Posição, Sprite, Nome)
+    player_visuals = parse_player_visuals(payload)
+    char_data = get_in(player_visuals, [:char]) || %{}
     char_name = Map.get(char_data, "name", "Player #{user_id}")
 
-    # 2. Configuração de Stats
-    stats = Map.merge(@default_state.stats, player_state[:stats] || %{})
-    max_hp = StatsCalculator.calculate_max_hp(stats.vigor)
-    current_hp = Map.get(player_state, :hp, max_hp)
-    current_xp = Map.get(player_state, :xp, 0)
-    # --- NOVO: SIMULAÇÃO DE ARMA EQUIPADA ---
-    # Futuramente isso virá do seu banco de dados (Inventory Context)
-    equipped_weapon = %{
-      # Nome
-      name: "Longsword",
-      # Dano base decente
-      base_damage: 575,
-      # Escala B em Força (1.1x)
-      scale_str: 1.1,
-      # Escala E em Dex (0.4x)
-      scale_dex: 0.4
+    # 2. Parse de Stats para criar o Ator
+    incoming_stats = %{
+      vigor: 10,
+      endurance: 10,
+      strength: 10,
+      dexterity: 10,
+      intelligence: 10,
+      faith: 10,
+      attunement: 10
     }
 
-    # 3. Assinatura do Tópico Privado
+    estimated_level = Map.values(incoming_stats) |> Enum.sum()
+    equipped_weapon = Factory.Weapon.generate_random(estimated_level, :rare)
+
+    # 3. CRIAÇÃO DO ATOR VIA CONTEXTO (Unificado)
+    actor =
+      ActorContext.new(:player, %{
+        id: user_id,
+        name: char_name,
+        stats: incoming_stats,
+        # Se nil, o Context calcula baseado no Vigor
+        hp: payload["hp"],
+        weapon: equipped_weapon
+      })
+
+    # Cálculo do Power Score para balanceamento de Mobs
+    power_score = Map.values(actor.stats) |> Enum.sum()
+
+    # 4. Assinatura do Tópico Privado
     RpgGameServerWeb.Endpoint.subscribe("player:#{user_id}")
 
-    # 4. Configura o Socket
+    # 5. Configura o Socket
+    # Agora guardamos o struct :actor inteiro no socket
     socket =
       socket
+      |> assign(:actor, actor)
       |> assign(:char_name, char_name)
       |> assign(:char, char_data)
-      |> assign(:last_x, player_state.x)
-      |> assign(:last_y, player_state.y)
-      |> assign(:stats, stats)
-      |> assign(:hp, current_hp)
-      |> assign(:max_hp, max_hp)
-      |> assign(:xp, current_xp)
-      |> assign(:weapon, equipped_weapon)
+      |> assign(:last_x, player_visuals.x)
+      |> assign(:last_y, player_visuals.y)
+      |> assign(:xp, Map.get(payload, "xp", 0))
 
-    # 5. Grid e Presence
-    socket = update_aoi_subscriptions(socket, player_state.x, player_state.y)
-    PlayerSpatialGrid.insert(user_id, player_state.x, player_state.y)
+    # 6. Grid e Presence
+    socket = update_aoi_subscriptions(socket, player_visuals.x, player_visuals.y)
+    PlayerSpatialGrid.insert(user_id, player_visuals.x, player_visuals.y)
 
-    {:ok, _} =
-      Presence.track(
-        socket,
-        user_id,
-        Map.put(player_state, :online_at, System.system_time(:second))
-      )
+    # --- PRESENCE ATUALIZADO ---
+    presence_meta =
+      player_visuals
+      |> Map.put(:online_at, System.system_time(:second))
+      # Mobs leem isso para se balancear
+      |> Map.put(:power_score, power_score)
 
-    push(socket, "welcome", %{my_id: user_id, hp: current_hp, max_hp: max_hp})
+    {:ok, _} = Presence.track(socket, user_id, presence_meta)
+
+    # Envia estado inicial para o cliente
+    push(socket, "welcome", %{my_id: user_id, hp: actor.hp, max_hp: actor.max_hp})
     push(socket, "current_players", %{players: list_present_players(socket)})
-    broadcast_movement(socket, player_state, user_id)
+    broadcast_movement(socket, player_visuals, user_id)
 
     {:noreply, socket}
   end
 
   # ===================================================================
-  # RECEBER DANO (Mitigação de Defesa - Input Damage)
+  # RECEBER DANO (Input Damage) - REFATORADO
   # ===================================================================
 
   @impl true
   def handle_info(%{event: "take_damage", payload: payload}, socket) do
-    raw_damage = payload.damage
-    attacker_id = payload.attacker_id
-    is_crit = Map.get(payload, :is_crit, false)
+    # 1. Delega a lógica de defesa e cálculo de HP para o Contexto
+    {updated_actor, final_damage, is_dead} =
+      ActorContext.take_damage(socket.assigns.actor, payload.damage)
 
-    # 1. Calcula Defesa (Strength)
-    defense = StatsCalculator.calculate_physical_defense(socket.assigns.stats.strength)
+    # 2. Atualiza o Socket com o Ator modificado (novo HP)
+    socket = assign(socket, :actor, updated_actor)
 
-    # 2. Mitigação (Dano nunca é zero)
-    min_damage = trunc(raw_damage * 0.1)
-    final_damage = max(min_damage, raw_damage - defense)
-
-    # 3. Atualiza HP
-    new_hp = socket.assigns.hp - final_damage
-
-    # 4. Atualiza Cliente
+    # 3. Atualiza Cliente (UI)
     push(socket, "update_stats", %{
-      hp: new_hp,
-      max_hp: socket.assigns.max_hp,
+      hp: updated_actor.hp,
+      max_hp: updated_actor.max_hp,
       damage_taken: final_damage,
-      source: attacker_id,
-      is_crit: is_crit
+      source: payload.attacker_id,
+      is_crit: Map.get(payload, :is_crit, false)
     })
 
-    # 5. Broadcast Visual
-    broadcast_damage_visual(socket, attacker_id, final_damage, is_crit)
+    # 4. Broadcast Visual (Numbers popups)
+    broadcast_damage_visual(
+      socket,
+      payload.attacker_id,
+      final_damage,
+      Map.get(payload, :is_crit, false)
+    )
 
-    if new_hp <= 0 do
-      handle_player_death(socket, attacker_id)
-      {:noreply, assign(socket, :hp, 0)}
+    if is_dead do
+      handle_player_death(socket, payload.attacker_id)
+      # Mantém HP zerado no socket visualmente
+      {:noreply, socket}
     else
-      {:noreply, assign(socket, :hp, new_hp)}
+      {:noreply, socket}
     end
   end
 
-  # Handler para receber XP do EnemyAI (mensagem privada via tópico player:{id})
   @impl true
   def handle_info(%{event: "xp_gain", payload: payload}, socket) do
     amount = payload.amount
-
-    # 1. ACUMULA O XP NO ESTADO DO SERVIDOR
     current_xp = socket.assigns.xp
     new_xp = current_xp + amount
-
-    # 2. Atualiza o socket com o novo total
     socket = assign(socket, :xp, new_xp)
 
-    # 3. ENVIA PARA O CLIENTE GAMEMAKER
     push(socket, "xp_gain", %{
-      # Quanto ganhou agora (pra mostrar o "+100 xp" flutuando)
       amount: amount,
-      # Total acumulado (pra atualizar a barra de progresso)
       total_xp: new_xp,
       source: payload.source,
-      player_id: socket.assigns.current_user_id
+      player_id: socket.assigns.actor.id
     })
 
     {:noreply, socket}
@@ -171,7 +166,7 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
 
   @impl true
   def handle_in("move", payload, socket) do
-    user_id = socket.assigns.current_user_id
+    user_id = socket.assigns.actor.id
     changes = parse_incoming_changes(payload)
 
     {socket, _moved?} =
@@ -203,12 +198,12 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
   end
 
   # ===================================================================
-  # COMBATE (CAUSAR DANO - Output Damage)
+  # COMBATE (CAUSAR DANO - Output Damage) - REFATORADO
   # ===================================================================
 
   @impl true
   def handle_in("attack_hit", payload, socket) do
-    attacker_id = socket.assigns.current_user_id
+    attacker_id = socket.assigns.actor.id
     target_id = Map.get(payload, "target_id")
     attacker_pos = {socket.assigns.last_x, socket.assigns.last_y}
 
@@ -223,20 +218,15 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     {:noreply, socket}
   end
 
-  # --- Helpers de Combate ---
-
   defp process_pve_hit(socket, target_id) do
-    attacker_id = socket.assigns.current_user_id
+    attacker_id = socket.assigns.actor.id
 
-    # Calcula Dano usando a Arma e Stats
-    {damage, _is_crit} = calculate_player_output_damage(socket)
+    # 1. Calcula dano usando a Lógica Unificada do Contexto
+    {damage, _is_crit} = ActorContext.calculate_outgoing_damage(socket.assigns.actor)
 
     case Registry.lookup(RpgGameServer.EnemyRegistry, target_id) do
-      [{pid, _}] ->
-        GenServer.cast(pid, {:take_damage, damage, attacker_id})
-
-      [] ->
-        Logger.warning("Mob #{target_id} não encontrado")
+      [{pid, _}] -> GenServer.cast(pid, {:take_damage, damage, attacker_id})
+      [] -> Logger.warning("Mob #{target_id} não encontrado")
     end
   end
 
@@ -244,8 +234,8 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     max_reach = 70.0
 
     if is_valid_hit?(attacker_pos, target_pos, max_reach) do
-      # Calcula Dano usando a Arma e Stats
-      {damage, is_crit} = calculate_player_output_damage(socket)
+      # 1. Calcula dano usando a Lógica Unificada do Contexto
+      {damage, is_crit} = ActorContext.calculate_outgoing_damage(socket.assigns.actor)
 
       RpgGameServerWeb.Endpoint.broadcast("player:#{target_id}", "take_damage", %{
         damage: damage,
@@ -256,52 +246,17 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     end
   end
 
-  # --- CÁLCULO DE DANO DO PLAYER (COM LÓGICA DE ARMA) ---
-
-  defp calculate_player_output_damage(socket) do
-    stats = socket.assigns.stats
-    # <--- Recupera a arma do socket
-    weapon = socket.assigns.weapon
-
-    # 1. Bônus de Stats (Eficiência do Jogador)
-    # Retorna uma % baseada na curva de nível (ex: 0.85 para lvl 40)
-    str_bonus_pct = StatsCalculator.calculate_stat_bonus(stats.strength)
-    dex_bonus_pct = StatsCalculator.calculate_stat_bonus(stats.dexterity)
-
-    # 2. Cálculo do Scaling (Quanto a arma aproveita dessa força)
-    # Ex: Base 20 * Scaling 1.1 * BonusJogador 0.85 = +18.7 dano
-    added_str_dmg = weapon.base_damage * weapon.scale_str * str_bonus_pct
-    added_dex_dmg = weapon.base_damage * weapon.scale_dex * dex_bonus_pct
-
-    # 3. Attack Rating (AR) Total
-    attack_rating = trunc(weapon.base_damage + added_str_dmg + added_dex_dmg)
-
-    # 4. Variação (RNG +/- 10%)
-    variation = 0.9 + :rand.uniform() * 0.2
-    final_raw_damage = trunc(attack_rating * variation)
-
-    # 5. Crítico (Baseado na Destreza)
-    crit_chance = StatsCalculator.calculate_crit_chance(stats.dexterity)
-
-    if :rand.uniform() < crit_chance do
-      # Crítico!
-      {trunc(final_raw_damage * 1.5), true}
-    else
-      {final_raw_damage, false}
-    end
-  end
+  # --- A FUNÇÃO ANTIGA calculate_player_output_damage FOI REMOVIDA ---
+  # Toda a lógica agora reside em RpgGameServer.Game.ActorContext
 
   # ===================================================================
   # HELPERS GERAIS
   # ===================================================================
   @impl true
   def terminate(_reason, socket) do
-    user_id = socket.assigns.current_user_id
-
-    # Remove o player de onde quer que ele esteja
-    # Requer que o remove/1 exista no PlayerSpatialGrid
+    # O ActorContext não precisa de cleanup especial aqui, apenas removemos do Grid
+    user_id = socket.assigns.actor.id
     PlayerSpatialGrid.remove(user_id)
-
     broadcast_from(socket, "player_left", %{id: user_id})
     :ok
   end
@@ -343,7 +298,7 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     cy = socket.assigns.current_cy
 
     RpgGameServerWeb.Endpoint.broadcast!("area:#{cx}:#{cy}", "damage_applied", %{
-      target_id: socket.assigns.current_user_id,
+      target_id: socket.assigns.actor.id,
       attacker_id: attacker_id,
       damage: damage,
       is_crit: is_crit,
@@ -365,7 +320,8 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     Presence.list(socket)
     |> Enum.filter(fn {id, _} -> MapSet.member?(nearby, id) end)
     |> Enum.map(fn {id, d} ->
-      Map.merge(@default_state, List.first(d.metas))
+      # Mescla o default visual com os metadados do presence
+      Map.merge(@default_visuals, List.first(d.metas))
       |> Map.take([:x, :y, :spr, :state, :face, :char])
       |> Map.put(:id, id)
     end)
@@ -382,18 +338,10 @@ defmodule RpgGameServerWeb.Channels.RoomChannel do
     end
   end
 
-  defp parse_player_state(payload) do
-    parsed =
-      Enum.reduce(@default_state, %{}, fn {k, d}, acc ->
-        Map.put(acc, k, Map.get(payload, Atom.to_string(k), d))
-      end)
-
-    if Map.has_key?(payload, "stats") do
-      atom_stats = Map.new(payload["stats"], fn {k, v} -> {String.to_atom(k), v} end)
-      Map.put(parsed, :stats, atom_stats)
-    else
-      parsed
-    end
+  defp parse_player_visuals(payload) do
+    Enum.reduce(@default_visuals, %{}, fn {k, d}, acc ->
+      Map.put(acc, k, Map.get(payload, Atom.to_string(k), d))
+    end)
   end
 
   defp parse_incoming_changes(payload) do

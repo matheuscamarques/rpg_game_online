@@ -14,10 +14,12 @@ defmodule RpgGameServer.Game.WorldTicker do
     )
   end
 
-  def remove_from_buffer(id) do
-    GenServer.cast(
-      {:via, PartitionSupervisor, {@supervisor_name, id}},
-      {:remove, id}
-    )
+  def get_all_updates() do
+    PartitionSupervisor.which_children(@supervisor_name)
+    |> Enum.flat_map(&get_updates/1)
+  end
+
+  defp get_updates({_id, pid, _type, _modules}) do
+    GenServer.call(pid, :get_updates)
   end
 end

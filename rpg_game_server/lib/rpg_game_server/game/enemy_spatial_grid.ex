@@ -1,90 +1,84 @@
 defmodule RpgGameServer.Game.EnemySpatialGrid do
-  # Reutilizamos o Gerente de Tabelas (criado para o Player)
-  # Ele garante que as tabelas pertençam ao servidor e não morram com o mob.
   alias RpgGameServer.Game.ShardManager
 
-  # Configurações
-  @cell_size 35           # Resolução fina para colisão
-  @chunk_size 2_100       # Cada tabela cobre 2000x2000 pixels
+  @cell_size 2100
+  # ATENÇÃO: Deve ser múltiplo de @cell_size para evitar edge-cases simples
+  @chunk_size 2100
 
-  # REMOVIDO: @world_size (Agora é infinito)
-
-  def init do
-    # Não fazemos nada aqui.
-    # As tabelas serão criadas sob demanda pelo ShardManager.
-    :ok
-  end
-
-  # --- ESCRITA (Dinâmica) ---
+  def init, do: :ok
+  @neighbor_deltas for x <- -1..1, y <- -1..1, do: {x, y}
+  # --- ESCRITA ---
 
   def update(id, old_x, old_y, new_x, new_y) do
-    # 1. Otimização de Delta
     old_cell = to_cell_key(old_x, old_y)
     new_cell = to_cell_key(new_x, new_y)
 
     if old_cell != new_cell do
-      old_shard = get_shard_name(old_x, old_y)
-      new_shard = get_shard_name(new_x, new_y)
+      # Agora buscamos TIDs.
+      # Para o antigo, usamos get_shard_tid (pode ser nil se foi limpo).
+      # Para o novo, usamos get_or_create (garante existência).
+      old_tid = get_shard_tid_for_coord(old_x, old_y)
+      new_tid = get_or_create_tid_for_coord(new_x, new_y)
 
-      # A. Se mudou de SHARD, precisamos garantir que o novo existe
-      if old_shard != new_shard do
-        ShardManager.ensure_shard_exists(new_shard)
+      # Remove da velha (Se a tabela ainda existir)
+      if old_tid && :ets.info(old_tid) != :undefined do
+        :ets.delete_object(old_tid, {old_cell, id, old_x, old_y})
       end
 
-      # B. Remove da velha (COM SEGURANÇA)
-      # Pode ser que a tabela antiga tenha sido limpa ou nunca criada (bug), checamos antes.
-      if :ets.info(old_shard) != :undefined do
-        :ets.delete_object(old_shard, {old_cell, id, old_x, old_y})
-      end
-
-      # C. Insere na nova (Se for o mesmo shard, já existe. Se for novo, criamos acima)
-      # Nota: Se for o mesmo shard, ensure_shard_exists seria redundante, mas seguro.
-      # Para performance máxima, confiamos que se ele já estava lá, a tabela existe.
-      :ets.insert(new_shard, {new_cell, id, new_x, new_y})
+      # Insere na nova
+      :ets.insert(new_tid, {new_cell, id, new_x, new_y})
     else
       :ok
     end
   end
 
   def insert(id, x, y) do
-    shard = get_shard_name(x, y)
-
-    # GARANTIA: Antes de colocar o mob no mundo, cria o chão.
-    ShardManager.ensure_shard_exists(shard)
-
+    tid = get_or_create_tid_for_coord(x, y)
     cell = to_cell_key(x, y)
-    :ets.insert(shard, {cell, id, x, y})
+    :ets.insert(tid, {cell, id, x, y})
   end
 
   def remove(id, x, y) do
-    shard = get_shard_name(x, y)
+    tid = get_shard_tid_for_coord(x, y)
     cell = to_cell_key(x, y)
 
-    # Só tenta deletar se a tabela existir
-    if :ets.info(shard) != :undefined do
-      :ets.delete_object(shard, {cell, id, x, y})
+    if tid && :ets.info(tid) != :undefined do
+      :ets.delete_object(tid, {cell, id, x, y})
     end
   end
 
-  # --- LEITURA (Inalterada mas Segura) ---
+  # --- LEITURA ---
 
   def get_nearby_entities(x, y) do
     {cx, cy} = to_cell_key(x, y)
 
-    neighbors = for dx <- -1..1, dy <- -1..1, do: {cx + dx, cy + dy}
+    # Em vez de gerar ranges e rodar um 'for', apenas iteramos a lista pronta.
+    # É mais rápido e elimina o risco de erro de sintaxe do pipe.
+    @neighbor_deltas
+    |> Enum.group_by(fn {dx, dy} ->
+      # Calculamos a coordenada real do vizinho
+      nx = cx + dx
+      ny = cy + dy
 
-    neighbors
-    |> Enum.group_by(fn {nx, ny} ->
-       px = nx * @cell_size
-       py = ny * @cell_size
-       get_shard_name(px, py)
+      # Lógica de Shard
+      px = nx * @cell_size
+      py = ny * @cell_size
+      {floor(px / @chunk_size), floor(py / @chunk_size)}
     end)
-    |> Enum.flat_map(fn {shard, keys} ->
-      # Safety check: Se olhar pro abismo (tabela não criada), retorna vazio.
-      if :ets.info(shard) != :undefined do
-        Enum.flat_map(keys, fn key -> :ets.lookup(shard, key) end)
-      else
-        []
+    |> Enum.flat_map(fn {{sx, sy}, deltas} ->
+      case ShardManager.get_shard_tid(:enemy, sx, sy) do
+        nil ->
+          []
+
+        tid ->
+          if :ets.info(tid) != :undefined do
+            Enum.flat_map(deltas, fn {dx, dy} ->
+              key = {cx + dx, cy + dy}
+              :ets.lookup(tid, key)
+            end)
+          else
+            []
+          end
       end
     end)
     |> Enum.map(fn {_, id, ex, ey} -> {id, {ex, ey}} end)
@@ -94,10 +88,15 @@ defmodule RpgGameServer.Game.EnemySpatialGrid do
 
   defp to_cell_key(x, y), do: {floor(x / @cell_size), floor(y / @cell_size)}
 
-  defp get_shard_name(x, y) do
-    # Floor garante coordenadas negativas corretas (-2500 vira índice -2)
+  defp get_or_create_tid_for_coord(x, y) do
     xi = floor(x / @chunk_size)
     yi = floor(y / @chunk_size)
-    :"enemy_grid_#{xi}_#{yi}"
+    ShardManager.get_or_create_shard(:enemy, xi, yi)
+  end
+
+  defp get_shard_tid_for_coord(x, y) do
+    xi = floor(x / @chunk_size)
+    yi = floor(y / @chunk_size)
+    ShardManager.get_shard_tid(:enemy, xi, yi)
   end
 end

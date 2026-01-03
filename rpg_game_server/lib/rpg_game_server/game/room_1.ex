@@ -11,43 +11,62 @@ defmodule RpgGameServer.Game.Room1 do
   end
 
   # ===================================================================
-  # NOVA FUNÇÃO ADICIONADA
+  # FUNÇÕES PÚBLICAS FALTANTES (Corrigindo Warnings)
   # ===================================================================
-  # Retorna a lista completa de tiles {x,y} definidos para aquela zona.
-  # Usada pelo Spawner para fazer batching sem chamar o GenServer repetidamente.
+
+  # NOVO: Função para obter o tamanho do tile (chamada por EnemyAI)
+  def get_cell_size() do
+    case :ets.lookup(@table, :config_cell_size) do
+      [{_, cell_size}] -> cell_size
+      # Fallback
+      [] -> 32
+    end
+  end
+
+  # NOVO: Função otimizada de colisão (chamada por EnemyAI com cell_size)
+  def is_blocked?(pixel_x, pixel_y, cell_size) do
+    # Conversão direta de pixel para coordenadas de tile
+    tile_x = floor(pixel_x / cell_size)
+    tile_y = floor(pixel_y / cell_size)
+
+    case :ets.lookup(@table, {tile_x, tile_y}) do
+      # Parede (valor 1)
+      [{{^tile_x, ^tile_y}, 1}] -> true
+      # Livre (valor 0)
+      [{{^tile_x, ^tile_y}, 0}] -> false
+      # Fora do mapa (ou não mapeado)
+      # É mais seguro assumir bloqueado se não estiver mapeado.
+      _ -> true
+    end
+  end
+
+  # ===================================================================
+
+  # Retorna a lista completa de tiles/pixels {x,y} definidos para aquela zona.
   def get_all_walkable_tiles(zone_id) do
-    # Garante que a chave seja string, pois no JSON as chaves são strings ("1", "2")
+    # Garante que a chave seja string
     key = to_string(zone_id)
 
     case :ets.lookup(@table, {:spawn_zone, key}) do
       # Retorna a lista de tuplas [{x,y}, {x,y}, ...]
       [{_, coords_list}] -> coords_list
-      # Se a zona não existir, retorna lista vazia para evitar crash no Enum
+      # Se a zona não existir, retorna lista vazia
       [] -> []
     end
   end
-  # ===================================================================
 
-  # Converte pixel -> tile e verifica colisão
+  # Converte pixel -> tile e verifica colisão (versão antiga/não otimizada)
   def is_blocked?(pixel_x, pixel_y) do
-    case :ets.lookup(@table, :config_cell_size) do
-      [{_, cell_size}] ->
-        tile_x = floor(pixel_x / cell_size)
-        tile_y = floor(pixel_y / cell_size)
-
-        case :ets.lookup(@table, {tile_x, tile_y}) do
-          [{{^tile_x, ^tile_y}, 1}] -> true # Parede
-          [{{^tile_x, ^tile_y}, 0}] -> false # Livre
-          [] -> true # Fora do mapa
-        end
-
-      [] -> true
+    case get_cell_size() do
+      cell_size when is_integer(cell_size) -> is_blocked?(pixel_x, pixel_y, cell_size)
+      _ -> true
     end
   end
 
   # Mantido para compatibilidade, caso use spawns unitários em outro lugar
   def get_random_spawn(zone_id) do
     key = to_string(zone_id)
+
     case :ets.lookup(@table, {:spawn_zone, key}) do
       [{_, coords_list}] -> Enum.random(coords_list)
       [] -> nil
@@ -63,7 +82,7 @@ defmodule RpgGameServer.Game.Room1 do
 
     # Tabela auxiliar de posições (se necessário)
     if :ets.info(:enemy_positions) == :undefined do
-       :ets.new(:enemy_positions, [:set, :named_table, :public, {:read_concurrency, true}])
+      :ets.new(:enemy_positions, [:set, :named_table, :public, {:read_concurrency, true}])
     end
 
     send(self(), :load_data)
@@ -91,8 +110,7 @@ defmodule RpgGameServer.Game.Room1 do
         end)
       end)
 
-      # 2. Carregar Spawns
-      # Estrutura no ETS: {{:spawn_zone, "1"}, [{10,10}, {10,11}...]}
+      # 2. Carregar Spawns (Mantido em Coordenadas de Tile, conforme seu código original)
       json["spawns"]
       |> Enum.each(fn {zone_id, list} ->
         clean_list = Enum.map(list, fn point -> {point["x"], point["y"]} end)
